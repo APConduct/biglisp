@@ -1,0 +1,21 @@
+# Basic rustfmt configuration for biglisp
+# Focus on preserving macro formatting
+
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+
+# Preserve macro formatting - this is the key setting
+format_macro_matchers = false
+
+# Don't reformat strings in macros
+format_strings = false
+
+# Keep imports organized
+imports_layout = "Mixed"
+group_imports = "StdExternalCrate"
+
+# Standard formatting
+fn_args_layout = "Tall"
+brace_style = "SameLineWhere"
+control_brace_style = "AlwaysSameLine"
