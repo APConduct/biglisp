@@ -252,20 +252,20 @@ mod tests {
 
     #[test]
     fn variable_capture() {
-        // Test variable capture using lisp_with_vars macro
+        // Test variable capture using unified lisp! macro with [vars] syntax
         let x = 5;
         let y = 10;
 
-        // Now this works with lisp_with_vars!
-        let result1 = lisp_with_vars!([x, y] (+ x y));
+        // Now this works with unified syntax!
+        let result1 = lisp!([x, y] (+ x y));
         assert_eq!(result1, 15);
 
-        let result2 = lisp_with_vars!([x] (* x x));
+        let result2 = lisp!([x] (* x x));
         assert_eq!(result2, 25);
 
         // Test with complex expressions
         let z = 3;
-        let result3 = lisp_with_vars!([x, y, z] (+ (* x y) z));
+        let result3 = lisp!([x, y, z] (+ (* x y) z));
         assert_eq!(result3, 53); // (5 * 10) + 3 = 53
     }
 
@@ -408,7 +408,7 @@ mod tests {
     fn complex_combinations() {
         // Test combining multiple advanced features
         let x = 10;
-        let result = lisp_with_vars!([x] (
+        let result = lisp!([x] (
             let [doubled (* x 2)
                  halved (/ x 2)]
             (if (> doubled halved)
@@ -427,6 +427,48 @@ mod tests {
         assert_eq!(vec_test, true);
     }
 
+    #[test]
+    fn unified_syntax_examples() {
+        // 🎉 UNIFIED SYNTAX EXAMPLES - One macro for everything!
+
+        // ✅ Basic expressions (no variable capture needed)
+        let basic = lisp!((+ (* 2 3) (/ 8 2)));
+        assert_eq!(basic, 10);
+
+        // ✅ Variable capture using [vars] syntax
+        let x = 5;
+        let y = 10;
+        let with_vars = lisp!([x, y] (+ (* x 2) y));
+        assert_eq!(with_vars, 20); // (5*2) + 10 = 20
+
+        // ✅ Complex combinations - variable capture + all features
+        let multiplier = 3;
+        let data = vec![1, 2, 3, 4];
+        let complex = lisp!([multiplier, data] (
+            let [doubled (* multiplier 2)
+                 filtered (rest data)
+                 total (count filtered)]
+            (if (> doubled total)
+                (str "Multiplier wins: " doubled " > " total)
+                (str "Count wins: " total " >= " doubled))
+        ));
+        assert_eq!(complex, "Multiplier wins: 6 > 3");
+
+        // ✅ Simple function definition and call (no variable capture issues)
+        let add_ten = lisp!((defn add_ten [x] (+ x 10)));
+        let result = lisp!((call add_ten 5));
+        assert_eq!(result, 15);
+
+        // ✅ Boolean and control flow features
+        let condition = true;
+        let simple_advanced = lisp!([condition] (
+            if condition
+                (str "Success with " (count [1 2 3]) " items")
+                (str "Failed")
+        ));
+        assert_eq!(simple_advanced, "Success with 3 items");
+    }
+
     // Note: For complex macro calls that formatters keep breaking, you can use:
     //
     // Example alternative approaches:
@@ -441,4 +483,6 @@ mod tests {
     //    let result = add_expr * sub_expr;
     //
     // 3. Configure .rustfmt.toml with format_macro_matchers = false
+    //
+    // 🚀 NEW: Unified syntax examples above show the power of the single lisp! macro!
 }
