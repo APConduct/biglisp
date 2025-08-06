@@ -69,10 +69,3 @@ pub fn lisp_fn(input: TokenStream) -> TokenStream {
     }
     .into()
 }
-
-// Legacy macro for backwards compatibility - now just calls lisp!
-#[proc_macro]
-pub fn lisp_with_vars(input: TokenStream) -> TokenStream {
-    // Simply delegate to the unified lisp! macro
-    lisp(input)
-}

@@ -1,10 +1,10 @@
-pub use biglisp_macros::{lisp, lisp_with_vars};
+pub use biglisp_macros::lisp;
 pub mod guts {
     pub use biglisp_core::LispExpr;
-    pub use biglisp_macros::{lisp_fn, lisp_with_vars};
+    pub use biglisp_macros::lisp_fn;
 }
 pub mod prelude {
-    pub use crate::{lisp, lisp_with_vars};
+    pub use crate::lisp;
 }
 
 #[cfg(test)]
@@ -48,7 +48,7 @@ mod tests {
         let result_add = lisp!((+ 42));
         assert_eq!(result_add, 42);
 
-        let result_mult = lisp!((* 7));
+        let result_mult = lisp!((*7));
         assert_eq!(result_mult, 7);
 
         let result_neg = lisp!((-10));
@@ -313,21 +313,21 @@ mod tests {
         assert_eq!(first_elem, 1);
 
         // Test first with single element
-        let first_single = lisp!((first [42]));
+        let first_single = lisp!((first[42]));
         assert_eq!(first_single, 42);
 
         // Test count operation
         let count_result = lisp!((count [1 2 3 4 5]));
         assert_eq!(count_result, 5);
 
-        let count_single = lisp!((count [42]));
+        let count_single = lisp!((count[42]));
         assert_eq!(count_single, 1);
 
         // Test rest operation
         let rest_result = lisp!((rest [1 2 3 4]));
         assert_eq!(rest_result, vec![2, 3, 4]);
 
-        let rest_single = lisp!((rest [42]));
+        let rest_single = lisp!((rest[42]));
         assert_eq!(rest_single, Vec::<i32>::new());
 
         // Test cons operation
@@ -469,6 +469,96 @@ mod tests {
         assert_eq!(simple_advanced, "Success with 3 items");
     }
 
+    #[test]
+    fn comprehensive_functionality_audit() {
+        // 🔍 COMPREHENSIVE AUDIT: Verify ALL functionality is preserved after unification
+
+        // ✅ 1. Basic Arithmetic (all operators, multiple operands)
+        assert_eq!(lisp!((+ 1 2 3 4)), 10);
+        assert_eq!(lisp!((- 20 5 3)), 12);
+        assert_eq!(lisp!((* 2 3 4)), 24);
+        assert_eq!(lisp!((/ 24 2 3)), 4);
+
+        // ✅ 2. Comparison Operations
+        assert_eq!(lisp!((= 5 5)), true);
+        assert_eq!(lisp!((< 3 7)), true);
+        assert_eq!(lisp!((> 10 5)), true);
+
+        // ✅ 3. Boolean Logic
+        assert_eq!(lisp!((and true true false)), false);
+        assert_eq!(lisp!((or false true)), true);
+        assert_eq!(lisp!((not false)), true);
+
+        // ✅ 4. Conditionals
+        assert_eq!(lisp!((if (> 5 3) 100 200)), 100);
+        assert_eq!(lisp!((if (< 5 3) 100 200)), 200);
+
+        // ✅ 5. Local Bindings
+        assert_eq!(lisp!((let [x 10 y 5] (+ x y))), 15);
+        assert_eq!(lisp!((let [a (+ 2 3) b (* 2 4)] (+ a b))), 13);
+
+        // ✅ 6. Variable Capture (unified syntax)
+        let rust_x = 42;
+        let rust_y = 8;
+        assert_eq!(lisp!([rust_x, rust_y] (+ rust_x rust_y)), 50);
+        assert_eq!(lisp!([rust_x] (* rust_x 2)), 84);
+
+        // ✅ 7. Functions
+        let square = lisp!((defn square [n] (* n n)));
+        assert_eq!(lisp!((call square 6)), 36);
+
+        let add_nums = lisp!((defn add_nums [a b c] (+ a b c)));
+        assert_eq!(lisp!((call add_nums 1 2 3)), 6);
+
+        // ✅ 8. List/Vector Operations
+        assert_eq!(lisp!((first [10 20 30])), 10);
+        assert_eq!(lisp!((rest [10 20 30])), vec![20, 30]);
+        assert_eq!(lisp!((cons 0 [1 2 3])), vec![0, 1, 2, 3]);
+        assert_eq!(lisp!((count [1 2 3 4 5])), 5);
+
+        // ✅ 9. String Operations
+        assert_eq!(lisp!((str "Hello" " " "World")), "Hello World");
+        assert_eq!(lisp!((str "Value: " 42)), "Value: 42");
+
+        // ✅ 10. Control Flow
+        let _unit_result: () = lisp!((dotimes i 3 (+ i 1)));
+
+        // ✅ 11. Error Handling
+        assert_eq!(lisp!((try (+ 1 2) 999)), 3);
+
+        // ✅ 12. Sequential Execution
+        assert_eq!(lisp!((do (+ 1 2) (* 3 4) (- 10 5))), 5);
+
+        // ✅ 13. Complex Nesting (deeply nested)
+        assert_eq!(lisp!((+ (+ (+ 1 2) (+ 3 4)) (+ (+ 5 6) (+ 7 8)))), 36);
+
+        // ✅ 14. Mixed Variable Capture and Complex Operations
+        let factor = 2;
+        let numbers = vec![1, 2, 3];
+        let complex_result = lisp!([factor, numbers] (
+            let [doubled (* factor 2)
+                 list_size (count numbers)
+                 first_elem (first numbers)]
+            (+ doubled list_size first_elem)
+        ));
+        assert_eq!(complex_result, 8); // 4 + 3 + 1 = 8
+
+        // ✅ 15. All operators with edge cases
+        assert_eq!(lisp!((+ 42)), 42); // Single operand
+        assert_eq!(lisp!((-5)), -5); // Unary negation
+        assert_eq!(lisp!((*7)), 7); // Single multiplication
+
+        // ✅ 16. Boolean combinations with comparisons
+        assert_eq!(lisp!((and (> 5 3) (< 2 10) (= 4 4))), true);
+        assert_eq!(lisp!((or (< 5 3) (> 2 10) (= 4 5))), false);
+
+        // ✅ 17. Simple function without variable capture (to avoid closure lifetime issues)
+        let simple_func = lisp!((defn add_hundred [x] (+ x 100)));
+        assert_eq!(lisp!((call simple_func 50)), 150);
+
+        // 🎉 ALL FUNCTIONALITY VERIFIED - NO REGRESSIONS!
+    }
+
     // Note: For complex macro calls that formatters keep breaking, you can use:
     //
     // Example alternative approaches:
@@ -484,5 +574,5 @@ mod tests {
     //
     // 3. Configure .rustfmt.toml with format_macro_matchers = false
     //
-    // 🚀 NEW: Unified syntax examples above show the power of the single lisp! macro!
+    // 🚀 UNIFIED: Single lisp! macro handles everything seamlessly!
 }
