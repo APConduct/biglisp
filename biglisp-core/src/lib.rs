@@ -334,6 +334,88 @@ impl LispExpr {
                 quote! { { #(#statements);* } }
             }
 
+            // Boolean operations
+            "and" => {
+                if args.len() >= 2 {
+                    let terms = args.iter().map(|e| e.to_rust());
+                    let mut result = quote! { true };
+                    for term in terms {
+                        result = quote! { (#result) && (#term) };
+                    }
+                    result
+                } else {
+                    quote! { compile_error!("And requires at least 2 arguments") }
+                }
+            }
+            "or" => {
+                if args.len() >= 2 {
+                    let terms = args.iter().map(|e| e.to_rust());
+                    let mut result = quote! { false };
+                    for term in terms {
+                        result = quote! { (#result) || (#term) };
+                    }
+                    result
+                } else {
+                    quote! { compile_error!("Or requires at least 2 arguments") }
+                }
+            }
+            "not" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { !(#arg) }
+                } else {
+                    quote! { compile_error!("Not requires exactly 1 argument") }
+                }
+            }
+
+            // List/Vector operations
+            "first" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg).first().copied().unwrap_or_default() }
+                } else {
+                    quote! { compile_error!("First requires exactly 1 argument") }
+                }
+            }
+            "rest" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { { let v = #arg; if v.len() > 1 { v[1..].to_vec() } else { vec![] } } }
+                } else {
+                    quote! { compile_error!("Rest requires exactly 1 argument") }
+                }
+            }
+            "cons" => {
+                if args.len() == 2 {
+                    let elem = args[0].to_rust();
+                    let list = args[1].to_rust();
+                    quote! { { let mut result = vec![(#elem)]; result.extend(#list); result } }
+                } else {
+                    quote! { compile_error!("Cons requires exactly 2 arguments") }
+                }
+            }
+            "count" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg).len() }
+                } else {
+                    quote! { compile_error!("Count requires exactly 1 argument") }
+                }
+            }
+
+            // String operations
+            "str" => {
+                if args.len() >= 1 {
+                    let string_parts = args.iter().map(|e| {
+                        let arg = e.to_rust();
+                        quote! { (#arg).to_string() }
+                    });
+                    quote! { [#(#string_parts),*].join("") }
+                } else {
+                    quote! { String::new() }
+                }
+            }
+
             // Print/debug
             "println" => {
                 if args.len() == 1 {

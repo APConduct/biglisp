@@ -250,6 +250,116 @@ mod tests {
         assert_eq!(result2, 25);
     }
 
+    #[test]
+    fn variable_capture_limitations() {
+        // This test demonstrates current limitations with variable capture
+        let x = 5;
+        let y = 10;
+
+        // These currently don't work - variables from outer scope aren't captured
+        // TODO: Implement variable capture from outer scope
+        // let result1 = lisp!((+ x y));  // Would fail - x and y not found
+        // assert_eq!(result1, 15);
+
+        // Workaround: Use literals for now
+        let result_literals = lisp!((+ 5 10));
+        assert_eq!(result_literals, 15);
+
+        // Another workaround: Combine Rust expressions with lisp expressions
+        let rust_sum = x + y;
+        let result_combined = lisp!((*2)) * rust_sum; // 2 * 15 = 30
+        assert_eq!(result_combined, 30);
+    }
+
+    #[test]
+    fn boolean_operations() {
+        // Test and operation
+        let result_and_true = lisp!((and true true));
+        assert_eq!(result_and_true, true);
+
+        let result_and_false = lisp!((and true false));
+        assert_eq!(result_and_false, false);
+
+        let result_and_multiple = lisp!((and (> 5 3) (< 2 4) (= 1 1)));
+        assert_eq!(result_and_multiple, true);
+
+        // Test or operation
+        let result_or_true = lisp!((or false true));
+        assert_eq!(result_or_true, true);
+
+        let result_or_false = lisp!((or false false));
+        assert_eq!(result_or_false, false);
+
+        let result_or_multiple = lisp!((or (< 5 3) (> 2 4) (= 1 1)));
+        assert_eq!(result_or_multiple, true);
+
+        // Test not operation
+        let result_not_true = lisp!((not false));
+        assert_eq!(result_not_true, true);
+
+        let result_not_false = lisp!((not true));
+        assert_eq!(result_not_false, false);
+
+        let result_not_expr = lisp!((not (< 5 3)));
+        assert_eq!(result_not_expr, true);
+    }
+
+    #[test]
+    fn list_operations() {
+        // Test creating vectors
+        let vec_simple = lisp!([1 2 3 4]);
+        assert_eq!(vec_simple, vec![1, 2, 3, 4]);
+
+        // Test first operation
+        let first_elem = lisp!((first [1 2 3]));
+        assert_eq!(first_elem, 1);
+
+        // Test first with single element
+        let first_single = lisp!((first [42]));
+        assert_eq!(first_single, 42);
+
+        // Test count operation
+        let count_result = lisp!((count [1 2 3 4 5]));
+        assert_eq!(count_result, 5);
+
+        let count_single = lisp!((count [42]));
+        assert_eq!(count_single, 1);
+
+        // Test rest operation
+        let rest_result = lisp!((rest [1 2 3 4]));
+        assert_eq!(rest_result, vec![2, 3, 4]);
+
+        let rest_single = lisp!((rest [42]));
+        assert_eq!(rest_single, Vec::<i32>::new());
+
+        // Test cons operation
+        let cons_result = lisp!((cons 0 [1 2 3]));
+        assert_eq!(cons_result, vec![0, 1, 2, 3]);
+
+        let cons_single = lisp!((cons 0 [42]));
+        assert_eq!(cons_single, vec![0, 42]);
+    }
+
+    #[test]
+    fn string_operations() {
+        // Test string concatenation
+        let result_simple = lisp!((str "hello" " " "world"));
+        assert_eq!(result_simple, "hello world");
+
+        let result_mixed = lisp!((str "The answer is " 42));
+        assert_eq!(result_mixed, "The answer is 42");
+
+        let result_single = lisp!((str "hello"));
+        assert_eq!(result_single, "hello");
+
+        // Test with expressions
+        let result_expr = lisp!((str "Sum: " (+ 2 3)));
+        assert_eq!(result_expr, "Sum: 5");
+
+        let result_complex = lisp!((str "2 + 3 = " (+ 2 3) " and 2 * 3 = " (* 2 3)));
+        assert_eq!(result_complex, "2 + 3 = 5 and 2 * 3 = 6");
+    }
+
     // Note: For complex macro calls that formatters keep breaking, you can use:
     //
     // Example alternative approaches:
