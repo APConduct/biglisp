@@ -8,20 +8,50 @@ use syn::{
     Ident, Lit, Token,
 };
 
+/// Represents a Lisp expression in the BigLisp language.
+///
+/// This enum is used to model various types of expressions that can appear
+/// in Lisp-like syntax, including symbols, literals, lists, vectors, and operators.
 pub enum LispExpr {
+    /// A symbol, represented by an identifier.
     Symbol(Ident),
+
+    /// A literal value, such as a number or string.
     Literal(Lit),
+
+    /// A list of Lisp expressions, typically used for function calls or grouping.
     List(Vec<LispExpr>),
+
+    /// A vector of Lisp expressions, used for collections.
     Vector(Vec<LispExpr>),
+
+    /// An operator, represented as a string (e.g., "+", "-", "*").
     Operator(String),
 }
 
 impl Debug for LispExpr {
+    /// Formats the `LispExpr` enum for debugging purposes.
+    ///
+    /// This implementation provides a human-readable representation of each variant
+    /// of the `LispExpr` enum, including its associated data.
+    ///
+    /// # Parameters
+    /// - `f`: A mutable reference to the formatter used to write the output.
+    ///
+    /// # Returns
+    /// - `std::fmt::Result`: Indicates whether the formatting was successful.
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            // Formats the `Symbol` variant with its identifier.
             LispExpr::Symbol(ident) => write!(f, "Symbol({})", ident),
+
+            // Formats the `Literal` variant with its span information.
             LispExpr::Literal(lit) => write!(f, "Literal({:?})", lit.span()),
+
+            // Formats the `Operator` variant with its operator string.
             LispExpr::Operator(op) => write!(f, "Operator({})", op),
+
+            // Formats the `List` variant by iterating over its elements.
             LispExpr::List(exprs) => {
                 write!(f, "List(")?;
                 for (i, expr) in exprs.iter().enumerate() {
@@ -32,6 +62,8 @@ impl Debug for LispExpr {
                 }
                 write!(f, ")")
             }
+
+            // Formats the `Vector` variant by iterating over its elements.
             LispExpr::Vector(exprs) => {
                 write!(f, "Vector(")?;
                 for (i, expr) in exprs.iter().enumerate() {
@@ -47,8 +79,24 @@ impl Debug for LispExpr {
 }
 
 impl Parse for LispExpr {
+    /// Parses a `LispExpr` from a token stream.
+    ///
+    /// This implementation supports various Lisp-like syntax constructs, including:
+    /// - Parenthesized lists of expressions (e.g., `(expr1 expr2 ...)`).
+    /// - Bracketed vectors of expressions (e.g., `[expr1 expr2 ...]`).
+    /// - Operators (`+`, `-`, `*`, `/`, `%`, etc.).
+    /// - Literals (e.g., numbers, strings).
+    /// - Symbols (e.g., `if`, `let`, `do`, etc.).
+    ///
+    /// # Parameters
+    /// - `input`: The token stream to parse.
+    ///
+    /// # Returns
+    /// - `Ok(LispExpr)`: The parsed Lisp expression.
+    /// - `Err(syn::Error)`: If the input cannot be parsed as a valid `LispExpr`.
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
         if input.peek(Paren) {
+            // Parse a parenthesized list of expressions.
             let content;
             syn::parenthesized!(content in input);
             let mut exprs = Vec::new();
@@ -57,6 +105,7 @@ impl Parse for LispExpr {
             }
             Ok(LispExpr::List(exprs))
         } else if input.peek(Bracket) {
+            // Parse a bracketed vector of expressions.
             let content;
             syn::bracketed!(content in input);
             let mut exprs = Vec::new();
@@ -65,52 +114,66 @@ impl Parse for LispExpr {
             }
             Ok(LispExpr::Vector(exprs))
         } else if input.peek(Token![+]) {
+            // Parse the `+` operator.
             input.parse::<Token![+]>()?;
             Ok(LispExpr::Operator("+".to_string()))
         } else if input.peek(Token![-]) {
+            // Parse the `-` operator.
             input.parse::<Token![-]>()?;
             Ok(LispExpr::Operator("-".to_string()))
         } else if input.peek(Token![*]) {
+            // Parse the `*` operator.
             input.parse::<Token![*]>()?;
             Ok(LispExpr::Operator("*".to_string()))
         } else if input.peek(Token![/]) {
+            // Parse the `/` operator.
             input.parse::<Token![/]>()?;
             Ok(LispExpr::Operator("/".to_string()))
         } else if input.peek(Token![=]) {
+            // Parse the `=` operator.
             input.parse::<Token![=]>()?;
             Ok(LispExpr::Operator("=".to_string()))
         } else if input.peek(Token![<]) {
+            // Parse the `<` operator.
             input.parse::<Token![<]>()?;
             Ok(LispExpr::Operator("<".to_string()))
         } else if input.peek(Token![>]) {
+            // Parse the `>` operator.
             input.parse::<Token![>]>()?;
             Ok(LispExpr::Operator(">".to_string()))
         } else if input.peek(Token![%]) {
+            // Parse the `%` operator.
             input.parse::<Token![%]>()?;
             Ok(LispExpr::Operator("%".to_string()))
         } else if input.peek(Lit) {
+            // Parse a literal value.
             Ok(LispExpr::Literal(input.parse()?))
         } else {
-            // Try to parse as identifier first, then handle special cases
+            // Attempt to parse as a symbol or identifier.
             let lookahead = input.lookahead1();
             if lookahead.peek(syn::Token![if]) {
+                // Parse the `if` symbol.
                 input.parse::<syn::Token![if]>()?;
                 Ok(LispExpr::Symbol(Ident::new("if", Span::call_site())))
             } else if lookahead.peek(syn::Token![let]) {
+                // Parse the `let` symbol.
                 input.parse::<syn::Token![let]>()?;
                 Ok(LispExpr::Symbol(Ident::new("let", Span::call_site())))
             } else if lookahead.peek(syn::Token![do]) {
+                // Parse the `do` symbol.
                 input.parse::<syn::Token![do]>()?;
                 Ok(LispExpr::Symbol(Ident::new("do", Span::call_site())))
             } else if lookahead.peek(syn::Token![while]) {
+                // Parse the `while` symbol.
                 input.parse::<syn::Token![while]>()?;
                 Ok(LispExpr::Symbol(Ident::new("while", Span::call_site())))
             } else if lookahead.peek(syn::Token![try]) {
+                // Parse the `try` symbol.
                 input.parse::<syn::Token![try]>()?;
                 Ok(LispExpr::Symbol(Ident::new("try", Span::call_site())))
             } else if lookahead.peek(Ident) {
+                // Parse an identifier or special symbol.
                 let ident: Ident = input.parse()?;
-                // Handle special symbols including compound operators
                 let ident_str = ident.to_string();
                 if ident_str == "defn"
                     || ident_str == "println"
@@ -136,13 +199,45 @@ impl Parse for LispExpr {
                     Ok(LispExpr::Symbol(ident))
                 }
             } else {
+                // Return an error if no valid syntax is found.
                 Err(lookahead.error())
             }
         }
     }
 }
-
 impl LispExpr {
+    /// Converts a `LispExpr` into a Rust `TokenStream`.
+    ///
+    /// This method recursively transforms Lisp expressions into equivalent Rust code
+    /// that can be compiled and executed at compile-time. It handles all major
+    /// expression types including symbols, literals, operators, vectors, and lists.
+    ///
+    /// # Returns
+    /// - `TokenStream`: The generated Rust code tokens representing the equivalent
+    ///   Rust expression for the given Lisp expression.
+    ///
+    /// # Expression Type Handling
+    /// - **Symbols**: Direct identifier conversion (e.g., `x` becomes `x`)
+    /// - **Literals**: Direct literal conversion (e.g., `42` becomes `42`)
+    /// - **Operators**: Converted to prefixed identifiers (e.g., `+` becomes `op_plus`)
+    /// - **Vectors**: Converted to Rust `vec!` macros with element expansion
+    /// - **Lists**: Processed as function calls or special operations
+    ///
+    /// # List Processing
+    /// - Empty lists return the unit type `()`
+    /// - Lists with symbols or operators as the first element are expanded using
+    ///   `expand_operation()` to handle special forms like arithmetic, control flow, etc.
+    /// - Other lists are treated as function calls with the first element as the
+    ///   function and remaining elements as arguments
+    ///
+    /// # Example Transformations
+    /// ```text
+    /// Symbol: x                -> x
+    /// Literal: 42              -> 42
+    /// Vector: [1, 2, 3]        -> vec![1, 2, 3]
+    /// List: (+ 1 2)            -> Expanded arithmetic operation
+    /// List: (func arg1 arg2)   -> func(arg1, arg2)
+    /// ```
     pub fn to_rust(&self) -> TokenStream {
         match self {
             LispExpr::Symbol(ident) => {
@@ -197,8 +292,91 @@ impl LispExpr {
         }
     }
 
+    /// Expands BigLisp operations into equivalent Rust code.
+    ///
+    /// This method is the core of the BigLisp DSL, transforming Lisp-style function calls
+    /// and special forms into native Rust expressions. It handles all built-in operations
+    /// including arithmetic, comparisons, control flow, data structures, and utility functions.
+    ///
+    /// # Parameters
+    /// - `op_str`: The operation name as a string (e.g., "+", "if", "let", "defn")
+    /// - `args`: A slice of `LispExpr` arguments to the operation
+    ///
+    /// # Returns
+    /// - `TokenStream`: Generated Rust code that implements the operation
+    ///
+    /// # Supported Operations
+    ///
+    /// ## Arithmetic Operations
+    /// - `+`: Addition with identity element 0, supports single argument
+    /// - `-`: Subtraction and unary negation
+    /// - `*`: Multiplication with identity element 1, supports single argument
+    /// - `/`: Division (requires at least 2 arguments)
+    /// - `%`/`modulo`: Modulo operation
+    ///
+    /// ## Comparison Operations
+    /// - `=`/`eq`: Equality comparison
+    /// - `<`, `>`: Less than, greater than
+    /// - `gte`, `lte`: Greater/less than or equal
+    /// - `ne`: Not equal
+    ///
+    /// ## Boolean Operations
+    /// - `and`: Logical AND (requires at least 2 arguments)
+    /// - `or`: Logical OR (requires at least 2 arguments)
+    /// - `not`: Logical NOT (exactly 1 argument)
+    ///
+    /// ## Control Flow
+    /// - `if`: Conditional with optional else branch
+    /// - `let`: Local variable bindings with vector syntax
+    /// - `do`: Sequential execution block
+    /// - `while`: While loop with condition and body
+    /// - `dotimes`: For-like loop with variable, count, and body
+    ///
+    /// ## Function Operations
+    /// - `defn`: Function definition creating closures
+    /// - `call`: Function invocation
+    ///
+    /// ## Data Structure Operations
+    /// - `first`: Get first element of collection
+    /// - `rest`: Get all but first element
+    /// - `cons`: Prepend element to collection
+    /// - `count`: Get collection length
+    ///
+    /// ## String Operations
+    /// - `str`: String concatenation of multiple arguments
+    ///
+    /// ## Math Utility Functions
+    /// - `min`, `max`: Minimum/maximum of multiple values
+    /// - `abs`: Absolute value
+    /// - `inc`, `dec`: Increment/decrement by 1
+    ///
+    /// ## Predicate Functions
+    /// - `zero`: Test if value equals zero
+    /// - `pos`, `neg`: Test if value is positive/negative
+    /// - `even`, `odd`: Test if value is even/odd
+    ///
+    /// ## Error Handling
+    /// - `try`: Panic-safe execution with optional fallback
+    ///
+    /// ## Variable Capture
+    /// - `with-vars`: Capture external variables in scope
+    ///
+    /// ## Debug Operations
+    /// - `println`: Debug printing
+    ///
+    /// # Examples
+    /// ```ignore
+    /// // Arithmetic: (+ 1 2 3) -> 0 + 1 + 2 + 3
+    /// // Control flow: (if (> x 0) "pos" "neg") -> if x > 0 { "pos" } else { "neg" }
+    /// // Functions: (defn sq [x] (* x x)) -> closure |x: i32| -> i32 { x * x }
+    /// ```
+    ///
+    /// # Error Handling
+    /// Invalid argument counts or malformed expressions generate compile-time errors
+    /// using `compile_error!` macro, ensuring type safety and preventing runtime errors.
     fn expand_operation(&self, op_str: &str, args: &[LispExpr]) -> TokenStream {
         match op_str {
+            // Arithmetic Operations
             "+" => {
                 if args.is_empty() {
                     quote! { 0 }
