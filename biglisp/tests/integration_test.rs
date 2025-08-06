@@ -3,6 +3,7 @@
 
 use biglisp::prelude::*;
 
+#[allow(unused_must_use)]
 fn main() {
     println!("🚀 BigLisp Simple Integration Examples\n");
 
@@ -300,6 +301,7 @@ mod tests {
         assert_eq!(lisp!((call add 3 7)), 10);
     }
 
+    #[allow(unused_must_use)]
     #[test]
     fn test_sequential_execution() {
         assert_eq!(lisp!((do (+ 1 2) (* 3 4) (- 10 5))), 5);

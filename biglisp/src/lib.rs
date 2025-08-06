@@ -230,6 +230,7 @@ mod tests {
         assert!(true);
     }
 
+    #[allow(unused_must_use)]
     #[test]
     fn do_blocks() {
         // Test do expressions (sequential execution)
@@ -469,6 +470,7 @@ mod tests {
         assert_eq!(simple_advanced, "Success with 3 items");
     }
 
+    #[allow(unused_must_use)]
     #[test]
     fn comprehensive_functionality_audit() {
         // 🔍 COMPREHENSIVE AUDIT: Verify ALL functionality is preserved after unification

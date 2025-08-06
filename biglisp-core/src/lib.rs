@@ -8,9 +8,6 @@ use syn::{
     Ident, Lit, Token,
 };
 
-pub fn hello() {
-    println!("Hello, world!");
-}
 pub enum LispExpr {
     Symbol(Ident),
     Literal(Lit),

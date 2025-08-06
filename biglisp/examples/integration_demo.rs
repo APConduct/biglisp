@@ -3,6 +3,7 @@
 
 use biglisp::prelude::*;
 
+#[allow(unused_must_use)]
 fn main() {
     println!("🚀 BigLisp Simple Integration Examples\n");
 
@@ -164,16 +165,13 @@ fn main() {
     // =================================================================
     println!("🔄 Sequential Execution:");
 
-    let _do_result = lisp!((do
+    let do_result = lisp!((do
         (+ 1 2)
         (* 3 4)
         (- 10 5)
     ));
 
-    println!(
-        "  do block result (returns last expression): {}",
-        _do_result
-    );
+    println!("  do block result (returns last expression): {}", do_result);
     println!();
 
     // =================================================================
