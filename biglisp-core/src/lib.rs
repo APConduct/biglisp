@@ -91,7 +91,30 @@ impl Parse for LispExpr {
         } else if input.peek(Lit) {
             Ok(LispExpr::Literal(input.parse()?))
         } else {
-            Ok(LispExpr::Symbol(input.parse()?))
+            // Try to parse as identifier first, then handle special cases
+            let lookahead = input.lookahead1();
+            if lookahead.peek(syn::Token![if]) {
+                input.parse::<syn::Token![if]>()?;
+                Ok(LispExpr::Symbol(Ident::new("if", Span::call_site())))
+            } else if lookahead.peek(syn::Token![let]) {
+                input.parse::<syn::Token![let]>()?;
+                Ok(LispExpr::Symbol(Ident::new("let", Span::call_site())))
+            } else if lookahead.peek(syn::Token![do]) {
+                input.parse::<syn::Token![do]>()?;
+                Ok(LispExpr::Symbol(Ident::new("do", Span::call_site())))
+            } else if lookahead.peek(Ident) {
+                let ident: Ident = input.parse()?;
+                // Handle defn as a special case since it's not a Rust keyword
+                if ident == "defn" {
+                    Ok(LispExpr::Symbol(ident))
+                } else if ident == "println" {
+                    Ok(LispExpr::Symbol(ident))
+                } else {
+                    Ok(LispExpr::Symbol(ident))
+                }
+            } else {
+                Err(lookahead.error())
+            }
         }
     }
 }

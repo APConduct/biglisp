@@ -157,6 +157,99 @@ mod tests {
         assert_eq!(result_with_negation, 5); // -5 + 10 = 5
     }
 
+    #[test]
+    fn conditional_expressions() {
+        // Test if expressions
+        let result_true = lisp!((if (> 5 3) 10 20));
+        assert_eq!(result_true, 10);
+
+        let result_false = lisp!((if (< 5 3) 10 20));
+        assert_eq!(result_false, 20);
+
+        // Test if without else - commented out for now as it returns ()
+        // let result_no_else = lisp!((if (= 5 5) 42));
+        // assert_eq!(result_no_else, 42);
+
+        // Test nested conditions
+        let result_nested = lisp!((if (> (+ 2 3) 4) (* 2 5) (/ 10 2)));
+        assert_eq!(result_nested, 10); // (2+3) > 4 is true, so 2*5 = 10
+    }
+
+    #[test]
+    fn local_bindings() {
+        // Test let expressions with local variable bindings
+        let result_simple = lisp!((let [x 5] x));
+        assert_eq!(result_simple, 5);
+
+        let result_multiple = lisp!((let [x 3 y 4] (+ x y)));
+        assert_eq!(result_multiple, 7);
+
+        let result_nested_calc = lisp!((let [a 10 b 5] (* a (- a b))));
+        assert_eq!(result_nested_calc, 50); // 10 * (10 - 5) = 50
+
+        // Test let with more complex expressions
+        let result_complex = lisp!((let [x (+ 2 3) y (* 2 4)] (+ x y)));
+        assert_eq!(result_complex, 13); // (2+3) + (2*4) = 5 + 8 = 13
+    }
+
+    // TODO: Function definitions need to be at module level, not inside test functions
+    // #[test]
+    // fn function_definitions() {
+    //     // Test function definition and calling
+    //     // Note: This creates a function but doesn't call it yet
+    //     // In a real implementation, you'd need a way to store and call defined functions
+
+    //     // For now, test that the macro doesn't crash on function definitions
+    //     // The actual function calling would need additional infrastructure
+    //     let _square_fn = lisp!((defn square [x] (* x x)));
+
+    //     // Test multiple parameter function
+    //     let _add_fn = lisp!((defn add [a b] (+ a b)));
+
+    //     // Test function with more complex body
+    //     let _complex_fn = lisp!((defn complex_calc [x y] (+ (* x x) (* y y))));
+
+    //     // These tests mainly verify the macro doesn't panic on function definitions
+    //     // Actually calling these functions would require additional macro infrastructure
+    //     assert!(true); // Placeholder - just testing that compilation succeeds
+    // }
+
+    #[test]
+    fn println_expressions() {
+        // Test println functionality
+        // Note: These will actually print to stdout during testing
+
+        lisp!((println 42));
+        lisp!((println (+ 2 3)));
+        lisp!((println (+ 1 2) (* 3 4)));
+
+        // Test that println returns unit type (implicitly)
+        let _unit_result = lisp!((println "test output"));
+
+        // These tests verify println compiles and runs without panicking
+        assert!(true);
+    }
+
+    #[test]
+    fn do_blocks() {
+        // Test do expressions (sequential execution)
+        let result = lisp!((do
+            (+ 1 2)
+            (* 3 4)
+            (- 10 5)
+        ));
+        // do returns the last expression
+        assert_eq!(result, 5);
+
+        // Test do with mixed operations
+        let result2 = lisp!((do
+            (* 2 3)
+            (+ 10 20)
+            (/ 100 4)
+        ));
+        assert_eq!(result2, 25);
+    }
+
     // Note: For complex macro calls that formatters keep breaking, you can use:
     //
     // Example alternative approaches:
