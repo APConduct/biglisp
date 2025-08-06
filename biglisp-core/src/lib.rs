@@ -102,12 +102,16 @@ impl Parse for LispExpr {
             } else if lookahead.peek(syn::Token![do]) {
                 input.parse::<syn::Token![do]>()?;
                 Ok(LispExpr::Symbol(Ident::new("do", Span::call_site())))
+            } else if lookahead.peek(syn::Token![while]) {
+                input.parse::<syn::Token![while]>()?;
+                Ok(LispExpr::Symbol(Ident::new("while", Span::call_site())))
+            } else if lookahead.peek(syn::Token![try]) {
+                input.parse::<syn::Token![try]>()?;
+                Ok(LispExpr::Symbol(Ident::new("try", Span::call_site())))
             } else if lookahead.peek(Ident) {
                 let ident: Ident = input.parse()?;
                 // Handle defn as a special case since it's not a Rust keyword
-                if ident == "defn" {
-                    Ok(LispExpr::Symbol(ident))
-                } else if ident == "println" {
+                if ident == "defn" || ident == "println" || ident == "dotimes" || ident == "call" {
                     Ok(LispExpr::Symbol(ident))
                 } else {
                     Ok(LispExpr::Symbol(ident))
@@ -298,7 +302,7 @@ impl LispExpr {
                 }
             }
 
-            // Function definition
+            // Function definition - now creates a closure that can be called
             "defn" => {
                 if args.len() >= 3 {
                     if let (LispExpr::Symbol(name), LispExpr::Vector(params), body) =
@@ -317,8 +321,11 @@ impl LispExpr {
                         let body_tokens = body.to_rust();
 
                         quote! {
-                            fn #name(#(#param_names: i32),*) -> i32 {
-                                #body_tokens
+                            {
+                                let #name = |#(#param_names: i32),*| -> i32 {
+                                    #body_tokens
+                                };
+                                #name
                             }
                         }
                     } else {
@@ -328,10 +335,128 @@ impl LispExpr {
                     quote! { compile_error!("Function definition requires name, params, and body") }
                 }
             }
+
+            // Function call
+            "call" => {
+                if args.len() >= 1 {
+                    let func = args[0].to_rust();
+                    let func_args = args[1..].iter().map(|e| e.to_rust());
+                    quote! { (#func)(#(#func_args),*) }
+                } else {
+                    quote! { compile_error!("call requires at least a function") }
+                }
+            }
+
+            // Error handling - try/catch equivalent
+            "try" => {
+                if args.len() >= 1 {
+                    let try_body = args[0].to_rust();
+                    if args.len() >= 2 {
+                        let catch_body = args[1].to_rust();
+                        quote! {
+                            {
+                                let result = std::panic::catch_unwind(|| {
+                                    #try_body
+                                });
+                                match result {
+                                    Ok(val) => val,
+                                    Err(_) => #catch_body,
+                                }
+                            }
+                        }
+                    } else {
+                        quote! {
+                            {
+                                let result = std::panic::catch_unwind(|| {
+                                    #try_body
+                                });
+                                match result {
+                                    Ok(val) => val,
+                                    Err(_) => panic!("Unhandled error in try block"),
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    quote! { compile_error!("try requires at least a body") }
+                }
+            }
             // Block/do
             "do" => {
                 let statements = args.iter().map(|e| e.to_rust());
                 quote! { { #(#statements);* } }
+            }
+
+            // Variable capture - with-vars syntax
+            "with-vars" => {
+                if args.len() >= 2 {
+                    if let LispExpr::Vector(vars) = &args[0] {
+                        let body = &args[1];
+                        let var_captures: Vec<_> = vars
+                            .iter()
+                            .filter_map(|v| {
+                                if let LispExpr::Symbol(name) = v {
+                                    Some(name)
+                                } else {
+                                    None
+                                }
+                            })
+                            .collect();
+
+                        let body_tokens = body.to_rust();
+                        quote! {
+                            {
+                                #(let #var_captures = #var_captures;)*
+                                #body_tokens
+                            }
+                        }
+                    } else {
+                        quote! { compile_error!("with-vars requires vector of variable names") }
+                    }
+                } else {
+                    quote! { compile_error!("with-vars requires variables and body") }
+                }
+            }
+
+            // While loop
+            "while" => {
+                if args.len() == 2 {
+                    let condition = args[0].to_rust();
+                    let body = args[1].to_rust();
+                    quote! {
+                        {
+                            let mut result = ();
+                            while (#condition) {
+                                result = #body;
+                            }
+                            result
+                        }
+                    }
+                } else {
+                    quote! { compile_error!("While requires condition and body") }
+                }
+            }
+
+            // For-like loop (dotimes)
+            "dotimes" => {
+                if args.len() == 3 {
+                    if let LispExpr::Symbol(var) = &args[0] {
+                        let count = args[1].to_rust();
+                        let body = args[2].to_rust();
+                        quote! {
+                            {
+                                for #var in 0..(#count) {
+                                    let _ = #body;
+                                }
+                                ()
+                            }
+                        }
+                    } else {
+                        quote! { compile_error!("dotimes requires variable name") }
+                    }
+                } else {
+                    quote! { compile_error!("dotimes requires var, count, and body") }
+                }
             }
 
             // Boolean operations

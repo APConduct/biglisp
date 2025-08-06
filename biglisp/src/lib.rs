@@ -1,10 +1,10 @@
-pub use biglisp_macros::lisp;
+pub use biglisp_macros::{lisp, lisp_with_vars};
 pub mod guts {
     pub use biglisp_core::LispExpr;
-    pub use biglisp_macros::lisp_fn;
+    pub use biglisp_macros::{lisp_fn, lisp_with_vars};
 }
 pub mod prelude {
-    pub use crate::lisp;
+    pub use crate::{lisp, lisp_with_vars};
 }
 
 #[cfg(test)]
@@ -251,24 +251,22 @@ mod tests {
     }
 
     #[test]
-    fn variable_capture_limitations() {
-        // This test demonstrates current limitations with variable capture
+    fn variable_capture() {
+        // Test variable capture using lisp_with_vars macro
         let x = 5;
         let y = 10;
 
-        // These currently don't work - variables from outer scope aren't captured
-        // TODO: Implement variable capture from outer scope
-        // let result1 = lisp!((+ x y));  // Would fail - x and y not found
-        // assert_eq!(result1, 15);
+        // Now this works with lisp_with_vars!
+        let result1 = lisp_with_vars!([x, y] (+ x y));
+        assert_eq!(result1, 15);
 
-        // Workaround: Use literals for now
-        let result_literals = lisp!((+ 5 10));
-        assert_eq!(result_literals, 15);
+        let result2 = lisp_with_vars!([x] (* x x));
+        assert_eq!(result2, 25);
 
-        // Another workaround: Combine Rust expressions with lisp expressions
-        let rust_sum = x + y;
-        let result_combined = lisp!((*2)) * rust_sum; // 2 * 15 = 30
-        assert_eq!(result_combined, 30);
+        // Test with complex expressions
+        let z = 3;
+        let result3 = lisp_with_vars!([x, y, z] (+ (* x y) z));
+        assert_eq!(result3, 53); // (5 * 10) + 3 = 53
     }
 
     #[test]
@@ -358,6 +356,75 @@ mod tests {
 
         let result_complex = lisp!((str "2 + 3 = " (+ 2 3) " and 2 * 3 = " (* 2 3)));
         assert_eq!(result_complex, "2 + 3 = 5 and 2 * 3 = 6");
+    }
+
+    #[test]
+    fn function_definitions_and_calls() {
+        // Test function definition and calling with new closure-based approach
+        let square = lisp!((defn square [x] (* x x)));
+        let result1 = lisp!((call square 5));
+        assert_eq!(result1, 25);
+
+        let add = lisp!((defn add [a b] (+ a b)));
+        let result2 = lisp!((call add 3 7));
+        assert_eq!(result2, 10);
+
+        // Test function with complex body - fix variable scope
+        let result3 = {
+            let complex_fn = lisp!((defn complex [x y] (+ (* x x) (* y y))));
+            lisp!((call complex_fn 3 4))
+        };
+        assert_eq!(result3, 25); // 3² + 4² = 9 + 16 = 25
+    }
+
+    #[test]
+    fn advanced_control_flow() {
+        // Test dotimes loop - assign to unit type since it returns ()
+        let _result_dotimes: () = lisp!((dotimes i 5 (+ i 1)));
+
+        // Test that dotimes executes without panicking
+        let _result_sum: () = lisp!((dotimes i 3 (* (+ i 1) 2)));
+
+        // These tests mainly verify the advanced control flow compiles
+        assert!(true);
+    }
+
+    #[test]
+    fn error_handling() {
+        // Test try-catch equivalent
+        let safe_division = lisp!((try (/ 10 2) 0));
+        assert_eq!(safe_division, 5);
+
+        // Test try with just the try block (no catch)
+        let simple_try = lisp!((try (+ 1 2)));
+        assert_eq!(simple_try, 3);
+
+        // Test nested try blocks - fix negative literal issue
+        let nested_try = lisp!((try (try (+ 5 5) 0) (- 0 1)));
+        assert_eq!(nested_try, 10);
+    }
+
+    #[test]
+    fn complex_combinations() {
+        // Test combining multiple advanced features
+        let x = 10;
+        let result = lisp_with_vars!([x] (
+            let [doubled (* x 2)
+                 halved (/ x 2)]
+            (if (> doubled halved)
+                (str "Doubled " doubled " > halved " halved)
+                (str "Should not happen"))
+        ));
+        assert_eq!(result, "Doubled 20 > halved 5");
+
+        // Test simpler function without variable capture issues
+        let add_ten = lisp!((defn add_ten [x] (+ x 10)));
+        let result2 = lisp!((call add_ten 5));
+        assert_eq!(result2, 15);
+
+        // Test boolean logic with list operations
+        let vec_test = lisp!((and (> (count [1 2 3 4]) 2) (= (first [5 6 7]) 5)));
+        assert_eq!(vec_test, true);
     }
 
     // Note: For complex macro calls that formatters keep breaking, you can use:
