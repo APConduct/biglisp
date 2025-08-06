@@ -1,0 +1,17 @@
+[package]
+name = "biglisp"
+version.workspace = true
+edition = { workspace = true }
+authors = { workspace = true }
+repository = { workspace = true }
+# description = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+# license = { workspace = true }
+
+[dependencies]
+biglisp-macros = { path = "../biglisp-macros", version = "0.1.0" }
+biglisp-core = { path = "../biglisp-core", version = "0.1.0" }
+syn.workspace = true
+proc-macro2.workspace = true
+quote.workspace = true

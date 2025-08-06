@@ -1,6 +1,16 @@
-[package]
-name = "biglisp"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+resolver = "2"
+members = ["biglisp", "biglisp-cli", "biglisp-macros", "biglisp-core"]
 
-[dependencies]
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+repository = "https://github.com/APConduct/biglisp"
+keywords = ["macro", "lisp", "dsl", "syntax"]
+authors = ["Perry/APConduct aidanpj18@gmail.com"]
+categories = ["development-tools", "parsing"]
+
+[workspace.dependencies]
+proc-macro2 = "1.0"
+quote = "1.0"
+syn = { version = "2.0", features = ["full", "parsing"] }

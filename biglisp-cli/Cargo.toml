@@ -1,0 +1,15 @@
+[package]
+name = "biglisp-cli"
+edition.workspace = true
+version.workspace = true
+authors = { workspace = true }
+repository = { workspace = true }
+# description = { workspace = true }
+keywords = { workspace = true }
+categories = { workspace = true }
+# license = { workspace = true }
+
+
+[dependencies]
+clap = { version = "4.0", features = ["derive"] }
+biglisp = { path = "../biglisp" }
