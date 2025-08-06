@@ -39,6 +39,16 @@
 (< (+ 1 2) (* 2 3))              ; Expression comparison: true
 (> (+ (* 2 3) 1) (- 10 3))       ; Complex comparison: false
 
+; Extended comparison operators
+(gte 5 5)                        ; Greater than or equal: true
+(gte 10 7)                       ; Greater than or equal: true
+(gte 3 8)                        ; Greater than or equal: false
+(lte 3 7)                        ; Less than or equal: true
+(lte 5 5)                        ; Less than or equal: true
+(lte 8 3)                        ; Less than or equal: false
+(ne 5 3)                         ; Not equal: true
+(ne 7 7)                         ; Not equal: false
+
 ; Boolean logic operations
 (and true true)                  ; AND: true
 (and true false)                 ; AND: false
@@ -376,6 +386,9 @@
 ; ✅ Complex nested expressions
 ; ✅ Variable capture patterns
 ; ✅ Edge cases and advanced patterns
+; ✅ Extended comparison operators (gte, lte, ne)
+; ✅ Math utility functions (min, max, abs, modulo, inc, dec)
+; ✅ Predicate functions (zero, pos, neg, even, odd)
 
 ; To use this file:
 ; 1. Save as examples/comprehensive_demo.lisp

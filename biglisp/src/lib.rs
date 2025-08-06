@@ -479,10 +479,16 @@ mod tests {
         assert_eq!(lisp!((* 2 3 4)), 24);
         assert_eq!(lisp!((/ 24 2 3)), 4);
 
-        // ✅ 2. Comparison Operations
+        // ✅ 2. Comparison Operations (including new ones)
         assert_eq!(lisp!((= 5 5)), true);
         assert_eq!(lisp!((< 3 7)), true);
         assert_eq!(lisp!((> 10 5)), true);
+        assert_eq!(lisp!((lte 5 5)), true);
+        assert_eq!(lisp!((lte 3 7)), true);
+        assert_eq!(lisp!((gte 5 5)), true);
+        assert_eq!(lisp!((gte 7 3)), true);
+        assert_eq!(lisp!((ne 3 7)), true);
+        assert_eq!(lisp!((ne 5 5)), false);
 
         // ✅ 3. Boolean Logic
         assert_eq!(lisp!((and true true false)), false);
@@ -557,6 +563,84 @@ mod tests {
         assert_eq!(lisp!((call simple_func 50)), 150);
 
         // 🎉 ALL FUNCTIONALITY VERIFIED - NO REGRESSIONS!
+    }
+
+    #[test]
+    fn new_comparison_operators() {
+        // Test new comparison operators
+        assert_eq!(lisp!((gte 10 5)), true);
+        assert_eq!(lisp!((gte 5 5)), true);
+        assert_eq!(lisp!((gte 3 7)), false);
+
+        assert_eq!(lisp!((lte 3 7)), true);
+        assert_eq!(lisp!((lte 5 5)), true);
+        assert_eq!(lisp!((lte 10 5)), false);
+
+        assert_eq!(lisp!((ne 5 3)), true);
+        assert_eq!(lisp!((ne 5 5)), false);
+    }
+
+    #[test]
+    fn math_utility_functions() {
+        // Test min/max functions
+        assert_eq!(lisp!((min 5 3)), 3);
+        assert_eq!(lisp!((min 1 2 3)), 1);
+        assert_eq!(lisp!((max 5 3)), 5);
+        assert_eq!(lisp!((max 1 2 3)), 3);
+
+        // Test modulo
+        assert_eq!(lisp!((% 10 3)), 1);
+        assert_eq!(lisp!((modulo 15 4)), 3);
+
+        // Test absolute value
+        assert_eq!(lisp!((abs 5)), 5);
+        assert_eq!(lisp!((abs (- 0 7))), 7);
+    }
+
+    #[test]
+    fn utility_functions() {
+        // Test increment/decrement
+        assert_eq!(lisp!((inc 5)), 6);
+        assert_eq!(lisp!((dec 10)), 9);
+
+        // Test predicates
+        assert_eq!(lisp!((zero 0)), true);
+        assert_eq!(lisp!((zero 5)), false);
+
+        assert_eq!(lisp!((pos 5)), true);
+        assert_eq!(lisp!((pos 0)), false);
+        assert_eq!(lisp!((pos (- 0 3))), false);
+
+        assert_eq!(lisp!((neg (- 0 5))), true);
+        assert_eq!(lisp!((neg 0)), false);
+        assert_eq!(lisp!((neg 3)), false);
+
+        assert_eq!(lisp!((even 4)), true);
+        assert_eq!(lisp!((even 5)), false);
+        assert_eq!(lisp!((even 0)), true);
+
+        assert_eq!(lisp!((odd 3)), true);
+        assert_eq!(lisp!((odd 4)), false);
+        assert_eq!(lisp!((odd 1)), true);
+    }
+
+    #[test]
+    fn complex_expressions_with_new_operators() {
+        // Test complex expressions using new operators
+        let result1 = lisp!((and (gte 10 5) (lte 3 7) (ne 4 5)));
+        assert_eq!(result1, true);
+
+        let result2 = lisp!((max (min 10 5) (abs (- 0 3))));
+        assert_eq!(result2, 5);
+
+        let result3 = lisp!((if (even 6) (inc 10) (dec 10)));
+        assert_eq!(result3, 11);
+
+        // Test with variable capture
+        let x = 15;
+        let y = 4;
+        let result4 = lisp!([x, y] (and (gte x 10) (zero (% x y))));
+        assert_eq!(result4, false); // 15 >= 10 is true, but 15 % 4 != 0
     }
 
     // Note: For complex macro calls that formatters keep breaking, you can use:

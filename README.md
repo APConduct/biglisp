@@ -47,6 +47,10 @@ lisp!((/ 24 2 3))            // Division: 4
 ```rust
 lisp!((= 5 5))               // Equality: true
 lisp!((< 3 7))               // Less than: true
+lisp!((> 10 5))              // Greater than: true
+lisp!((gte 5 5))             // Greater than or equal: true
+lisp!((lte 3 7))             // Less than or equal: true
+lisp!((ne 3 7))              // Not equal: true
 lisp!((and true false))      // Logical AND: false
 lisp!((or false true))       // Logical OR: true
 lisp!((not false))           // Logical NOT: true
@@ -85,6 +89,25 @@ lisp!((cons 0 [1 2 3]))      // Prepend: [0, 1, 2, 3]
 // Define functions
 let square = lisp!((defn square [x] (* x x)));
 let result = lisp!((call square 5)); // Result: 25
+```
+
+### 🧮 Math Utilities
+```rust
+lisp!((min 5 3 8))           // Minimum: 3
+lisp!((max 1 9 4))           // Maximum: 9
+lisp!((abs (- 0 7)))         // Absolute value: 7
+lisp!((modulo 10 3))         // Modulo: 1
+lisp!((inc 5))               // Increment: 6
+lisp!((dec 10))              // Decrement: 9
+```
+
+### 🔍 Predicates
+```rust
+lisp!((zero 0))              // Is zero: true
+lisp!((pos 5))               // Is positive: true
+lisp!((neg (- 0 3)))         // Is negative: true
+lisp!((even 4))              // Is even: true
+lisp!((odd 3))               // Is odd: true
 ```
 
 ### 🧩 Variable Capture
@@ -177,9 +200,17 @@ fn main() {
     let result = lisp!((+ (* 2 3) (/ 8 2) (- 10 5)));
     assert_eq!(result, 15); // (6 + 4 + 5)
     
-    // Boolean logic with comparisons
-    let check = lisp!((and (> 10 5) (< 3 7) (= 4 4)));
+    // Extended comparisons and boolean logic
+    let check = lisp!((and (gte 10 5) (lte 3 7) (ne 4 5)));
     assert_eq!(check, true);
+    
+    // Math utilities
+    let math_result = lisp!((max (min 10 5) (abs (- 0 3))));
+    assert_eq!(math_result, 5);
+    
+    // Predicates
+    let pred_check = lisp!((and (even 4) (pos 5) (zero 0)));
+    assert_eq!(pred_check, true);
     
     // Conditional expressions
     let msg = lisp!((if (> (count [1 2 3 4]) 2) "many" "few"));
@@ -187,21 +218,34 @@ fn main() {
 }
 ```
 
-### Data Processing
+### Data Processing with New Features
 ```rust
 use biglisp::prelude::*;
 
 fn main() {
     let numbers = vec![1, 2, 3, 4, 5];
+    let threshold = 3;
     
-    let result = lisp!([numbers] (
+    let result = lisp!([numbers, threshold] (
         let [first_num (first numbers)
-             rest_nums (rest numbers)
-             total_count (count numbers)]
-        (+ (* first_num 10) total_count)
+             total_count (count numbers)
+             is_valid (and (gte total_count threshold) (pos first_num))]
+        (if is_valid
+            (+ (* first_num 10) total_count)
+            0)
     ));
     
     assert_eq!(result, 15); // (1 * 10) + 5
+    
+    // Advanced math operations
+    let math_result = lisp!([numbers] (
+        let [first_val (first numbers)
+             max_val (inc first_val)
+             is_even_max (even max_val)]
+        (if is_even_max max_val (dec max_val))
+    ));
+    
+    assert_eq!(math_result, 2); // inc(1) = 2, even(2) = true, so 2
 }
 ```
 
@@ -239,16 +283,20 @@ cargo test -p biglisp
 cargo test -p biglisp comprehensive_functionality_audit
 ```
 
-All BigLisp features are thoroughly tested with over 25 test cases covering:
-- Arithmetic operations
-- Boolean logic
-- Control flow
-- Data structures
-- String operations
-- Function definitions
-- Variable capture
-- Error handling
+All BigLisp features are thoroughly tested with 43 comprehensive test cases covering:
+- Arithmetic operations (`+`, `-`, `*`, `/`)
+- Extended comparisons (`=`, `<`, `>`, `gte`, `lte`, `ne`)
+- Boolean logic (`and`, `or`, `not`)
+- Control flow (`if`, `let`, `do`)
+- Data structures (vectors, `first`, `rest`, `count`, `cons`)
+- String operations (`str`)
+- Function definitions (`defn`, `call`)
+- Math utilities (`min`, `max`, `abs`, `modulo`, `inc`, `dec`)
+- Predicates (`zero`, `pos`, `neg`, `even`, `odd`)
+- Variable capture (`[vars]` syntax)
+- Error handling (`try`)
 - Complex nested expressions
+- Real-world integration examples
 
 ## 🛠️ Development
 
@@ -290,17 +338,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 | Feature | Status | Description |
 |---------|--------|-------------|
 | ✅ Arithmetic | Complete | `+`, `-`, `*`, `/` with multiple operands |
-| ✅ Comparisons | Complete | `=`, `<`, `>` operators |
+| ✅ Comparisons | Complete | `=`, `<`, `>`, `gte`, `lte`, `ne` operators |
 | ✅ Boolean Logic | Complete | `and`, `or`, `not` operations |
 | ✅ Control Flow | Complete | `if`, `let`, `do` constructs |
 | ✅ Data Structures | Complete | Vectors, `first`, `rest`, `count`, `cons` |
 | ✅ String Operations | Complete | `str` concatenation |
 | ✅ Functions | Complete | `defn` definition, `call` invocation |
+| ✅ Math Utilities | Complete | `min`, `max`, `abs`, `modulo`, `inc`, `dec` |
+| ✅ Predicates | Complete | `zero`, `pos`, `neg`, `even`, `odd` |
 | ✅ Variable Capture | Complete | `[vars]` syntax for Rust integration |
 | ✅ Error Handling | Complete | `try` expressions |
 | ✅ Loops | Complete | `dotimes` iteration |
 | ✅ CLI Tool | Complete | Interactive REPL and file execution |
-| ✅ Comprehensive Tests | Complete | Full test coverage |
+| ✅ Comprehensive Tests | Complete | Full test coverage (43 tests) |
 
 ## 🌟 Why BigLisp?
 
@@ -316,8 +366,11 @@ Perfect for:
 - Domain-specific languages in Rust applications
 - Configuration and scripting within Rust programs
 - Functional programming patterns in systems code
+- Mathematical computations and data validation
+- Business logic and rule engines
 - Teaching functional programming concepts
 - Rapid prototyping of algorithmic code
+- Complex conditional logic and calculations
 
 ## 🚀 Get Started Today!
 

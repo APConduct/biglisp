@@ -88,6 +88,9 @@ impl Parse for LispExpr {
         } else if input.peek(Token![>]) {
             input.parse::<Token![>]>()?;
             Ok(LispExpr::Operator(">".to_string()))
+        } else if input.peek(Token![%]) {
+            input.parse::<Token![%]>()?;
+            Ok(LispExpr::Operator("%".to_string()))
         } else if input.peek(Lit) {
             Ok(LispExpr::Literal(input.parse()?))
         } else {
@@ -110,8 +113,27 @@ impl Parse for LispExpr {
                 Ok(LispExpr::Symbol(Ident::new("try", Span::call_site())))
             } else if lookahead.peek(Ident) {
                 let ident: Ident = input.parse()?;
-                // Handle defn as a special case since it's not a Rust keyword
-                if ident == "defn" || ident == "println" || ident == "dotimes" || ident == "call" {
+                // Handle special symbols including compound operators
+                let ident_str = ident.to_string();
+                if ident_str == "defn"
+                    || ident_str == "println"
+                    || ident_str == "dotimes"
+                    || ident_str == "call"
+                    || ident_str == "gte"
+                    || ident_str == "lte"
+                    || ident_str == "ne"
+                    || ident_str == "min"
+                    || ident_str == "max"
+                    || ident_str == "abs"
+                    || ident_str == "modulo"
+                    || ident_str == "inc"
+                    || ident_str == "dec"
+                    || ident_str == "zero"
+                    || ident_str == "pos"
+                    || ident_str == "neg"
+                    || ident_str == "even"
+                    || ident_str == "odd"
+                {
                     Ok(LispExpr::Symbol(ident))
                 } else {
                     Ok(LispExpr::Symbol(ident))
@@ -143,6 +165,10 @@ impl LispExpr {
                             .replace("=", "eq")
                             .replace("<", "lt")
                             .replace(">", "gt")
+                            .replace(">=", "gte")
+                            .replace("<=", "lte")
+                            .replace("!=", "ne")
+                            .replace("%", "mod")
                     ),
                     Span::call_site(),
                 );
@@ -259,6 +285,42 @@ impl LispExpr {
                     quote! { (#left) > (#right) }
                 } else {
                     quote! { compile_error!("Greater-than requires exactly 2 arguments") }
+                }
+            }
+            "gte" => {
+                if args.len() == 2 {
+                    let left = args[0].to_rust();
+                    let right = args[1].to_rust();
+                    quote! { (#left) >= (#right) }
+                } else {
+                    quote! { compile_error!("Greater-than-or-equal requires exactly 2 arguments") }
+                }
+            }
+            "lte" => {
+                if args.len() == 2 {
+                    let left = args[0].to_rust();
+                    let right = args[1].to_rust();
+                    quote! { (#left) <= (#right) }
+                } else {
+                    quote! { compile_error!("Less-than-or-equal requires exactly 2 arguments") }
+                }
+            }
+            "ne" => {
+                if args.len() == 2 {
+                    let left = args[0].to_rust();
+                    let right = args[1].to_rust();
+                    quote! { (#left) != (#right) }
+                } else {
+                    quote! { compile_error!("Not-equal requires exactly 2 arguments") }
+                }
+            }
+            "%" | "modulo" => {
+                if args.len() == 2 {
+                    let left = args[0].to_rust();
+                    let right = args[1].to_rust();
+                    quote! { (#left) % (#right) }
+                } else {
+                    quote! { compile_error!("Modulo requires exactly 2 arguments") }
                 }
             }
             // Control flow
@@ -538,6 +600,100 @@ impl LispExpr {
                     quote! { [#(#string_parts),*].join("") }
                 } else {
                     quote! { String::new() }
+                }
+            }
+
+            // Math utility functions
+            "min" => {
+                if args.len() >= 2 {
+                    let first = args[0].to_rust();
+                    let rest = args[1..].iter().map(|e| e.to_rust());
+                    let mut result = quote! { (#first) };
+                    for term in rest {
+                        result = quote! { std::cmp::min(#result, #term) };
+                    }
+                    result
+                } else {
+                    quote! { compile_error!("min requires at least 2 arguments") }
+                }
+            }
+            "max" => {
+                if args.len() >= 2 {
+                    let first = args[0].to_rust();
+                    let rest = args[1..].iter().map(|e| e.to_rust());
+                    let mut result = quote! { (#first) };
+                    for term in rest {
+                        result = quote! { std::cmp::max(#result, #term) };
+                    }
+                    result
+                } else {
+                    quote! { compile_error!("max requires at least 2 arguments") }
+                }
+            }
+            "abs" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { ((#arg) as i32).abs() }
+                } else {
+                    quote! { compile_error!("abs requires exactly 1 argument") }
+                }
+            }
+
+            // Additional utility functions
+            "inc" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) + 1 }
+                } else {
+                    quote! { compile_error!("inc requires exactly 1 argument") }
+                }
+            }
+            "dec" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) - 1 }
+                } else {
+                    quote! { compile_error!("dec requires exactly 1 argument") }
+                }
+            }
+            "zero" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) == 0 }
+                } else {
+                    quote! { compile_error!("zero requires exactly 1 argument") }
+                }
+            }
+            "pos" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) > 0 }
+                } else {
+                    quote! { compile_error!("pos requires exactly 1 argument") }
+                }
+            }
+            "neg" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) < 0 }
+                } else {
+                    quote! { compile_error!("neg requires exactly 1 argument") }
+                }
+            }
+            "even" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) % 2 == 0 }
+                } else {
+                    quote! { compile_error!("even requires exactly 1 argument") }
+                }
+            }
+            "odd" => {
+                if args.len() == 1 {
+                    let arg = args[0].to_rust();
+                    quote! { (#arg) % 2 != 0 }
+                } else {
+                    quote! { compile_error!("odd requires exactly 1 argument") }
                 }
             }
 

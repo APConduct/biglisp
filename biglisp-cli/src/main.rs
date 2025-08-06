@@ -126,8 +126,35 @@ fn execute_expression(expr: &str, verbose: bool) {
         }
 
         // Comparison examples
-        s if s.starts_with("(=") || s.starts_with("(<") || s.starts_with("(>") => {
+        s if s.starts_with("(=")
+            || s.starts_with("(<")
+            || s.starts_with("(>")
+            || s.starts_with("(gte")
+            || s.starts_with("(lte")
+            || s.starts_with("(ne") =>
+        {
             println!("Result: {}", demo_comparison(s));
+        }
+
+        // Math utility examples
+        s if s.starts_with("(min")
+            || s.starts_with("(max")
+            || s.starts_with("(abs")
+            || s.starts_with("(modulo")
+            || s.starts_with("(inc")
+            || s.starts_with("(dec") =>
+        {
+            println!("Result: {}", demo_math_utility(s));
+        }
+
+        // Predicate examples
+        s if s.starts_with("(zero")
+            || s.starts_with("(pos")
+            || s.starts_with("(neg")
+            || s.starts_with("(even")
+            || s.starts_with("(odd") =>
+        {
+            println!("Result: {}", demo_predicate(s));
         }
 
         // Control flow examples
@@ -186,6 +213,45 @@ fn demo_comparison(expr: &str) -> String {
         "(< 7 3)" => "false".to_string(),
         "(> 7 3)" => "true".to_string(),
         "(> 3 7)" => "false".to_string(),
+        "(gte 5 5)" => "true".to_string(),
+        "(gte 7 3)" => "true".to_string(),
+        "(gte 3 7)" => "false".to_string(),
+        "(lte 3 7)" => "true".to_string(),
+        "(lte 5 5)" => "true".to_string(),
+        "(lte 7 3)" => "false".to_string(),
+        "(ne 3 7)" => "true".to_string(),
+        "(ne 5 5)" => "false".to_string(),
+        _ => "true/false".to_string(),
+    }
+}
+
+fn demo_math_utility(expr: &str) -> String {
+    match expr {
+        "(min 5 3)" => "3".to_string(),
+        "(min 1 2 3)" => "1".to_string(),
+        "(max 5 3)" => "5".to_string(),
+        "(max 1 2 3)" => "3".to_string(),
+        "(abs 5)" => "5".to_string(),
+        "(abs -7)" => "7".to_string(),
+        "(modulo 10 3)" => "1".to_string(),
+        "(inc 5)" => "6".to_string(),
+        "(dec 10)" => "9".to_string(),
+        _ => "math result".to_string(),
+    }
+}
+
+fn demo_predicate(expr: &str) -> String {
+    match expr {
+        "(zero 0)" => "true".to_string(),
+        "(zero 5)" => "false".to_string(),
+        "(pos 5)" => "true".to_string(),
+        "(pos 0)" => "false".to_string(),
+        "(neg -5)" => "true".to_string(),
+        "(neg 5)" => "false".to_string(),
+        "(even 4)" => "true".to_string(),
+        "(even 5)" => "false".to_string(),
+        "(odd 3)" => "true".to_string(),
+        "(odd 4)" => "false".to_string(),
         _ => "true/false".to_string(),
     }
 }
@@ -353,6 +419,9 @@ fn show_examples() {
     println!("  (= 5 5)             ; Equality: true");
     println!("  (< 3 7)             ; Less than: true");
     println!("  (> 7 3)             ; Greater than: true");
+    println!("  (gte 5 5)           ; Greater than or equal: true");
+    println!("  (lte 3 7)           ; Less than or equal: true");
+    println!("  (ne 3 7)            ; Not equal: true");
     println!();
 
     println!("🧠 Boolean Logic:");
@@ -393,6 +462,23 @@ fn show_examples() {
     println!("💡 Variable Capture (in Rust code):");
     println!("  let x = 5;");
     println!("  lisp!([x] (+ x 10))                  ; Captures Rust variable");
+    println!();
+
+    println!("🔧 Math Utilities:");
+    println!("  (min 5 3 8)         ; Minimum value: 3");
+    println!("  (max 1 9 4)         ; Maximum value: 9");
+    println!("  (abs -7)            ; Absolute value: 7");
+    println!("  (modulo 10 3)       ; Modulo operation: 1");
+    println!("  (inc 5)             ; Increment: 6");
+    println!("  (dec 10)            ; Decrement: 9");
+    println!();
+
+    println!("🔍 Predicates:");
+    println!("  (zero 0)            ; Is zero: true");
+    println!("  (pos 5)             ; Is positive: true");
+    println!("  (neg -3)            ; Is negative: true");
+    println!("  (even 4)            ; Is even: true");
+    println!("  (odd 3)             ; Is odd: true");
     println!();
 
     println!("🚀 Try these examples in the REPL!");
